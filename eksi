@@ -1,1 +1,82 @@
+#import the Beautiful soup functions to parse the data returned from the website
+from bs4 import BeautifulSoup
+import requests
+from pymongo import MongoClient
+
+# you can view title by 'print (soup.title)'
+print("--------------start------------------")
+
+# create database and collection
+def connect_mongo ():
+    #connect to pymongo
+    Client = MongoClient()
+    db = Client["comments"] #database creation
+    global collection
+    collection = db["macbookair-eksi"] #collection creation
+    """
+    # sample document creation
+    book = {}
+    book ["title"] = "mongodb Guide"
+    book ["year"] = 2015
+    book ["Author"] = "muash"
+    collection.insert(book)
+    """
+
+
+"""
+
+#print(comment_)
+#print ("comments are here:")
+
+# you can view the html format:
+# print (soup.prettify())
+
+"""
+
+connect_mongo()
+A = []
+B = []
+page_count = 84
+current_page = 1
+
+
+while current_page <= page_count:
+    # specify the url
+    eksi = "https://www.eksisozluk.com/macbook-air--1816105" + "?p=" + current_page.__str__()
+    # Query the website and return the html to the variable 'page'
+    page = requests.get(eksi)
+    # Parse the html in the 'page' variable, and store it in Beautiful Soup format
+    soup = BeautifulSoup(page.text)
+    # all comments are in 'ul = entry-list'
+    entry_list = soup.find('ul', id='entry-list')
+
+    for row in entry_list.find_all("li"):
+        #there is already one 'div class = content' in every 'li'
+        content = row.find_all('div', {"class" : "content"} )
+        #you are choosing first text
+        A.append(content[0].get_text())
+        # choose attribute 'data-author' in 'li'
+        author = row.get('data-author')
+        B.append(author)
+
+    current_page += 1
+
+#print(A[10])
+#print(B[10])
+comment_author = {}
+
+for i in range(len(A)):
+    comment_author['comment'] = A[i]
+    comment_author['author'] = B[i]
+    collection.insert(comment_author)
+    comment_author = {}
+
+
+
+
+
+
+
+
+
 
