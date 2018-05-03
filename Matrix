@@ -1,0 +1,280 @@
+import random
+
+class Matrix :
+
+    # constructor
+    def __init__(self, matrix, copy_matrix, matrix_a, matrix_b, minor):
+        self.matrix = matrix #is for transpose and trace
+        self.copy_matrix = copy_matrix # is generally used for scalar multiplication.
+        # It may change (square or not square) we can do it square matrix with setter method (comment line for copy_matrix)
+        self.matrix_a = matrix_a # matrix_a and matrix_b are for matrix multiplication
+        self.matrix_b = matrix_b
+        self.minor = minor # is for to find and preserve minor of initial matrix.
+
+
+
+    #sets random matrix for transpose and trace (just for verifying or tracing my code )
+    def set_square_matrix (self, n):
+        # list of list structure for square matrix
+        for i in range(n):
+            row = []
+            for j in range(n):
+                row.append(random.randint(-20,20))
+            self.matrix.append(row)
+
+    def get_square_matrix(self):
+        return self.matrix
+
+
+    def set_copy_matrix (self): # make square matrix with the same size matrix
+        for i in range(len(self.matrix)):
+            row = []
+            for j in range(len(self.matrix[0])):
+                row.append(0)
+            self.copy_matrix.append(row)
+
+
+    def get_copy_matrix (self):
+        return self.copy_matrix
+
+
+
+    def set_matrix_for_scalar_multiplication (self,m,n): # is also used for to set a matrix with a size we want.
+        self.copy_matrix  = []
+        for i in range(m):
+            row = []
+            for j in range(n):
+                row.append(random.randint(-20,20))
+            self.copy_matrix.append(row)
+
+    def set_scalar_multiplication(self,k ):
+        for i in range(len(self.copy_matrix)):
+            for j in range(len(self.copy_matrix[0])):
+                self.copy_matrix[i][j] = self.copy_matrix[i][j] * k
+
+    def get_scalar_multiplication (self):
+        return self.copy_matrix
+
+
+
+    def get_trace(self):
+        sum = 0
+        for i in range(len(self.matrix)):
+            for j in range(len(self.matrix[0])):
+                if (i==j):
+                  sum = sum + self.matrix[i][j]
+        return sum
+
+
+
+    def set_transpose (self):
+       self.copy_matrix = self.matrix
+       for i in range(len(self.copy_matrix)):
+           for j in range(i,len(self.matrix[0])):
+               temp = self.copy_matrix[i][j]
+               self.copy_matrix [i][j] = self.copy_matrix [j][i]
+               self.copy_matrix[j][i] = temp
+
+    def get_transpose (self):
+        return self.copy_matrix
+
+
+
+    # sets random matrix for matrix multiplication (just for verifying or tracing my code )
+    def set_matrix_for_matrix_multiplication(self, m, n, k):
+            """ n is the number of columns of first matrix and the number of rows second matrix (m*n,n*k)
+            m is the number of rows of first matrix; k is the number of columns of second matrix
+            in this function first matrix mmultiplies with second matrix (matrix_a*matrix_b) order is important !!!
+            """
+            for i in range(m):
+                row = []
+                for j in range(n):
+                    row.append(random.randint(-20, 20))
+                self.matrix_a.append(row)
+
+            for i in range(n):
+                row = []
+                for j in range(k):
+                    row.append(random.randint(-20, 20))
+                self.matrix_b.append(row)
+
+
+    def set_matrix_multiplication(self, matrix_a, matrix_b):
+        #first initialize result matrix
+        self.copy_matrix = []
+        for i in range(len(matrix_a)):
+            row = []
+            for j in range(len(matrix_b[0])):
+                row.append(0)
+            self.copy_matrix.append(row)
+        #mulply matrix (matrix_a * matrix_b)
+        for i in range(len(matrix_a)):
+            for j in range(len(matrix_b[0])):
+                for k in range(len(matrix_a[0])):
+                    self.copy_matrix[i][j] += matrix_a[i][k] * matrix_b[k][j]
+
+
+    # in order to calculate determinant firstly we have to find minor for specific index (i,j)
+    #in order to work this properly we have to use this lines outside the class :
+    #mat.minor = mat.matrix print("determinant of the matrix: ",mat.find_determinant(mat.minor)) SEE TEST CODES
+    def  find_minor(self,k,l):
+        for_minor = []
+        for i in range(len(self.minor)):
+            if k == i:
+                continue
+            row = []
+            for j in range(len(self.minor[0])):
+                if l == j:
+                   continue
+                row.append(self.minor[i][j])
+            for_minor.append(row)
+        self.minor = for_minor
+        return self.minor
+
+
+    def find_determinant(self, matrix):
+        s = 0
+        if len(matrix) == 2:
+            return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]
+        elif len(matrix) == 1:
+            return 0
+        else:
+            for i in range(len(matrix)):
+                s = s + ((-1) ** (i)) * self.matrix[0][i] * self.find_determinant(self.find_minor(0, i))
+        return s
+
+
+    def find_inverse(self) : # finds the inverse of matrix by Gauss-Jordan method
+        matrix_ = self.matrix
+        rows = len(matrix_)
+        cols = len (matrix_[0])
+        self.minor = self.matrix
+        if(self.find_determinant(self.minor)==0): # det 0 means matrix is not invertible
+            raise Exception ("Matrix is singular")
+        identity = self.make_identity() # creates identity_matrix with the same size with matrix
+        for i in range (rows): # concatenates identity matrix to matrix
+            matrix_[i] += identity[i]
+        i=0
+        for j in range (0,cols):
+            first_non_zero = self.check_for_zeros(matrix_,i,j)
+            # we guarantee that diagonals are 1
+            if first_non_zero != i:
+                matrix_ = self.swap_row(matrix_, i, first_non_zero)
+            # Divide X[i] by X[i][j] to make X[i][j] equal 1 (a row operation)
+            matrix_[i] = [m / matrix_[i][j] for m in matrix_[i]]
+
+            # Rescale all other rows to make their values 0 below X[i][j]
+            for q in range(0, rows):
+                if q != i:
+                    scaled_row = [matrix_[q][j] * m for m in matrix_[i]]
+                    matrix_[q] = [matrix_[q][m] - scaled_row[m] for m in range(0, len(scaled_row))]
+            # If either of these is true, we have iterated through the matrix, and are done
+            if i == rows or j == cols:
+                break
+            i += 1
+
+        # Get just now our inverse
+        for i in range(0, rows):
+            matrix_[i] = matrix_[i][cols:len(matrix_[i])]
+
+        return matrix_
+
+    def swap_row(self,matrix,i,p):
+        """
+           Swap row i and row p in a list of lists
+           matrix - list of lists
+           i - row index
+           p - row index
+           returns- modified matrix
+           """
+        matrix[p], matrix[i] = matrix[i], matrix[p]
+        return matrix
+
+
+
+    def make_identity(self): # returns identity matrix with the same size with matrix
+        identity_matrix = []
+        for i in range(len(self.matrix)):
+            row = []
+            for j in range(len(self.matrix[0])):
+                if i==j:
+                    row.append(1)
+                else:
+                    row.append(0)
+            identity_matrix.append(row)
+        return identity_matrix
+
+    def check_for_zeros (self,matrix,i,j):
+        """
+            Check matrix X to see if only zeros exist at or below row i in column j
+            global matrix - a list of lists
+            i - row index
+            j - column index
+            returns -
+                zero_sum - the count of non zero entries
+                first_non_zero - index of the first non value
+            """
+        first_non_zero = -1
+        for m in range(i,len(matrix)):
+            if (first_non_zero == -1) and (matrix[m][j] != 0) :
+                first_non_zero = m
+        return first_non_zero
+
+
+
+#IN ORDER TO TEST OUR CODE:
+mat = Matrix ([],[],[],[],[])
+print ("INITIAL MATRIX:")
+mat.set_square_matrix(3)
+print (mat.get_square_matrix())
+print ("more readable form:")
+for row in mat.matrix:
+    print(row)
+print("TRACE:")
+print("Trace of matrix= ", mat.get_trace())
+print ("TRANSPOSE:")
+mat.set_transpose()
+for row in mat.get_transpose():
+    print (row)
+print ("SCALAR MULTIPLICATION:")
+mat.set_matrix_for_scalar_multiplication(3,4)
+print ("A random matrix:")
+for row in mat.copy_matrix:
+    print(row)
+mat.set_scalar_multiplication(2)
+print ("get scalar multiplication:")
+print (mat.get_scalar_multiplication())
+print ("more readable form after scalar multiplication:")
+for row in mat.copy_matrix:
+    print(row)
+print ("MATRIX MULTIPLICATION:")
+print ("two random matrix:")
+mat.set_matrix_for_matrix_multiplication(2,3,4)
+for row in mat.matrix_a:
+    print(row)
+print("and")
+for row in mat.matrix_b:
+    print(row)
+print("matrix multiplication result:")
+mat.set_matrix_multiplication(mat.matrix_a,mat.matrix_b)
+for row in mat.copy_matrix:
+    print(row)
+print("DETERMINANT:")
+print("Matrix:")
+for row in mat.matrix:
+    print(row)
+mat.minor = mat.matrix
+print("determinant of the matrix: ",mat.find_determinant(mat.minor))
+print("--------INVERSE:------------------")
+print("the matrix that will be taken inverse")
+for row in mat.matrix:
+    print(row)
+print("identity matrix with the same size with matrix")
+identity = mat.make_identity()
+for row in identity:
+    print(row)
+print ("Inverse of matrix:")
+inverse_matrix= mat.find_inverse()
+for row in inverse_matrix:
+    print(row)
+print ("-------------END-------------------------")
